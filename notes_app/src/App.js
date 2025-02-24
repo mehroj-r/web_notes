@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import EmptyPlaceholder from "./components/empty-page";
 import Menu from "./components/menu";
+import Note from "./components/Note";
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
           <Routes>
             <Route path="/menu" element={<Menu />} />
             <Route path="/empty-placeholder" element={<EmptyPlaceholder />} />
+            <Route path="/notes" element={<Note />} />
           </Routes>
         </div>
       </Router>
