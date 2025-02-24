@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FolderIcon, StarIcon, PlusIcon, TrashIcon, ArchiveIcon, FileIcon, X as XIcon, Undo2 as UndoIcon } from 'lucide-react';
 
 const Menu = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [selectedItem, setSelectedItem] = useState('Personal');
     const [recentNotes, setRecentNotes] = useState([]);
     const [folders, setFolders] = useState([]);
@@ -9,6 +12,7 @@ const Menu = () => {
     const [newFolderName, setNewFolderName] = useState('');
     const [isAddingFolder, setIsAddingFolder] = useState(false);
     const [editingFolder, setEditingFolder] = useState(null);
+    const [allNotes, setAllNotes] = useState([]);
 
     // Load data from localStorage on component mount
     useEffect(() => {
@@ -18,10 +22,33 @@ const Menu = () => {
             { id: 2, title: 'Work' }
         ];
         const savedDeletedFolders = JSON.parse(localStorage.getItem('deletedFolders')) || [];
+        const savedAllNotes = JSON.parse(localStorage.getItem('notes')) || [];
 
         setRecentNotes(savedNotes);
         setFolders(savedFolders);
         setDeletedFolders(savedDeletedFolders);
+        setAllNotes(savedAllNotes);
+    }, []);
+
+    // Update recent notes when all notes change
+    useEffect(() => {
+        // Listen for storage events to update the notes list
+        const handleStorageChange = () => {
+            const savedAllNotes = JSON.parse(localStorage.getItem('notes')) || [];
+            setAllNotes(savedAllNotes);
+            
+            // Update recent notes based on last modified
+            const sortedNotes = [...savedAllNotes].sort((a, b) => 
+                new Date(b.lastModified) - new Date(a.lastModified)
+            );
+            setRecentNotes(sortedNotes.slice(0, 3));
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     // Save to localStorage whenever data changes
@@ -88,15 +115,32 @@ const Menu = () => {
     // CRUD operations for notes
     const addNote = () => {
         const newNote = {
-            id: Date.now(),
+            note_id: Date.now(),
             title: 'New Note',
-            date: new Date().toISOString()
+            content: 'Start writing your note here...',
+            created: new Date().toISOString(),
+            lastModified: new Date().toISOString()
         };
-        setRecentNotes([newNote, ...recentNotes].slice(0, 3)); // Keep only 3 recent notes
+        
+        // Update all notes
+        const updatedNotes = [newNote, ...allNotes];
+        setAllNotes(updatedNotes);
+        localStorage.setItem('notes', JSON.stringify(updatedNotes));
+        
+        // Update recent notes
+        setRecentNotes([newNote, ...recentNotes].slice(0, 3));
+        
+        // Navigate to the new note
+        navigate(`/notes/${newNote.note_id}`);
+    };
+
+    // Navigate to a note
+    const navigateToNote = (noteId) => {
+        navigate(`/notes/${noteId}`);
     };
 
     return (
-        <div className="w-64 h-screen bg-gray-900 text-gray-400 p-4">
+        <div className="w-64 h-screen bg-gray-900 text-gray-400 p-4 overflow-y-auto">
             {/* Logo */}
             <div className="flex items-center space-x-2 mb-6">
                 <span className="text-xl font-semibold text-white">Nowted</span>
@@ -116,7 +160,30 @@ const Menu = () => {
                 <h2 className="text-sm font-semibold mb-2">Recents</h2>
                 <ul>
                     {recentNotes.map(note => (
-                        <li key={note.id} className="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg cursor-pointer">
+                        <li 
+                            key={note.note_id} 
+                            className="flex items-center space-x-2 p-2 hover:bg-gray-800 rounded-lg cursor-pointer"
+                            onClick={() => navigateToNote(note.note_id)}
+                        >
+                            <FileIcon size={16} />
+                            <span className="text-sm">{note.title}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            {/* All Notes Section */}
+            <div className="mb-6">
+                <h2 className="text-sm font-semibold mb-2">All Notes</h2>
+                <ul>
+                    {allNotes.map(note => (
+                        <li 
+                            key={note.note_id} 
+                            className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer ${
+                                location.pathname === `/notes/${note.note_id}` ? 'bg-gray-800 text-white' : 'hover:bg-gray-800'
+                            }`}
+                            onClick={() => navigateToNote(note.note_id)}
+                        >
                             <FileIcon size={16} />
                             <span className="text-sm">{note.title}</span>
                         </li>

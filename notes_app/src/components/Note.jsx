@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const Note = () => {
+  const { noteId } = useParams();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState(null);
   const [content, setContent] = useState([]);
@@ -18,11 +21,17 @@ const Note = () => {
         const parsedNotes = JSON.parse(storedNotes);
         setNotes(parsedNotes);
         
-        // Set the first note as current if available
-        if (parsedNotes.length > 0) {
-          setCurrentNote(parsedNotes[0]);
-          // Convert the content string to array by paragraphs
-          setContent(parsedNotes[0].content.split(/\n\n|(?<=\.)\s+(?=[A-Z])/).filter(p => p.trim()));
+        // Find note by ID from URL parameter
+        if (noteId) {
+          const foundNote = parsedNotes.find(note => note.note_id.toString() === noteId);
+          if (foundNote) {
+            setCurrentNote(foundNote);
+            // Convert the content string to array by paragraphs
+            setContent(foundNote.content.split(/\n\n|(?<=\.)\s+(?=[A-Z])/).filter(p => p.trim()));
+          } else {
+            // If note with ID not found, redirect to notes list
+            navigate('/notes');
+          }
         }
       } catch (e) {
         console.error('Error parsing notes from localStorage:', e);
@@ -30,7 +39,7 @@ const Note = () => {
         setNotes([]);
       }
     }
-  }, []);
+  }, [noteId, navigate]);
 
   // Save notes to localStorage whenever they change
   useEffect(() => {
@@ -227,6 +236,9 @@ const Note = () => {
     setContent(["Start writing your note here..."]);
     
     localStorage.setItem('notes', JSON.stringify(updatedNotes));
+    
+    // Navigate to the new note URL
+    navigate(`/notes/${newId}`);
   };
 
   // Get formatted date for display
