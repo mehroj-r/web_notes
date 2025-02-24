@@ -19,11 +19,11 @@ This project is a simple Notes application built using ReactJS. It allows users 
 
 ## Technologies Used
 
-- ReactJS: Frontend framework
+- **ReactJS:** Frontend framework
 
-- CSS: Styling
+- **CSS:** Styling
 
-- Tailwind / Material-UI : UI components
+- **Tailwind / Material-UI :** UI components
 
 
 ## Wireframe
